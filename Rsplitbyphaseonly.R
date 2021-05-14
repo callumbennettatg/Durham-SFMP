@@ -1,0 +1,17 @@
+library(readr)
+binary0 <- read_delim("ID.binary", "\t", escape_double = FALSE, col_types = cols(CHROM = col_character(), POS = col_character()), trim_ws = TRUE)
+LGs <- read_delim("phased.txt", "\t", escape_double = FALSE, col_types = cols(CHR = col_character(), POS = col_character()), trim_ws = TRUE)
+#split the file by phase
+LGs.1<-subset(LGs,LGs$PHASE_NUM==1)
+write.table(LGs.1,file="LGsphase1.txt",quote=F,sep="\t",row.names=F)
+LGs.2<-subset(LGs,LGs$PHASE_NUM==2)
+write.table(LGs.2,file="LGsphase2.txt",quote=F,sep="\t",row.names=F)
+#merge binary with each of the two phased LG files and return ID to third column
+binary1<-merge(LGs.1[,1],binary0,by="ID",all=F)
+binary1<-data.frame(binary1$CHROM,binary1$POS,binary1$ID,binary1[,4:ncol(binary1)])
+colnames(binary1)<-c("CHROM","POS","ID",colnames(binary1[,4:ncol(binary1)]))
+write.table(binary1,file="binary1.binary",quote=F,sep="\t",row.names=F)
+binary2<-merge(LGs.2[,1],binary0,by="ID",all=F)
+binary2<-data.frame(binary2$CHROM,binary2$POS,binary2$ID,binary2[,4:ncol(binary2)])
+colnames(binary2)<-c("CHROM","POS","ID",colnames(binary2[,4:ncol(binary2)]))
+write.table(binary2,file="binary2.binary",quote=F,sep="\t",row.names=F)

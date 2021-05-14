@@ -1,0 +1,143 @@
+#first in linux use 
+#mkdir newdirname
+#to make new directories and 
+#cp pathto/sourcedir/*.0.ordered.mstmap pathto/newdirname/
+#to make maps to new directories
+library(readr)
+setwd("C:/Users/Forxb/My Documents/Masters/map comparison/")
+#import first family phase 1 files
+readx<-function(x) {
+  read_tsv(x,col_names=c("snp","lg","dist"))
+}
+setwd("C:/Users/Forxb/My Documents/Masters/map comparison/30311/Phase 1/")
+temp = list.files(pattern="*.mstmap")
+fam1p1 = lapply(temp, readx)
+#reorder by numerical lg name
+names(fam1p1)<-c("A","J","K","L","M","N","O","P","B","C","D","E","F","G","H","I")
+fam1p1<-fam1p1[sort(names(fam1p1))]
+#separate even and odd lgs
+evens<-as.list(rep(NA,length(fam1p1)/2))
+odds<-as.list(rep(NA,length(fam1p1)/2))
+for(i in 1:length(fam1p1)){
+  if(i%%2==1){
+    odds[[(i%/%2)+1]]<-fam1p1[[i]]
+  } else {
+    evens[[i/2]]<-fam1p1[[i]]
+  }
+}
+#read in first family phase 2 files
+setwd("C:/Users/Forxb/My Documents/Masters/map comparison/30311/Phase 2/")
+temp = list.files(pattern="*.mstmap")
+fam1p2 = lapply(temp, readx)
+#reorder by numerical lg name
+names(fam1p2)<-c("A","J","K","L","M","N","O","P","B","C","D","E","F","G","H","I")
+fam1p2<-fam1p2[sort(names(fam1p2))]
+#split into odd and even lgs and append to phase 1 odds and evens
+for(i in (length(fam1p1)+1):(length(fam1p1)+length(fam1p2))){
+  if(i%%2==1){
+    odds[[(i%/%2)+1]]<-fam1p2[[i-length(fam1p1)]]
+  } else {
+    evens[[i/2]]<-fam1p2[[i-length(fam1p1)]]
+  }
+}
+fam1evens<-evens
+fam1odds<-odds
+#second family same steps
+setwd("C:/Users/Forxb/My Documents/Masters/map comparison/20108/Phase 1/")
+temp = list.files(pattern="*.mstmap")
+fam2p1 = lapply(temp, readx)
+#reorder by numerical lg name
+names(fam2p1)<-c("A","J","K","L","M","N","O","P","B","C","D","E","F","G","H","I")
+fam2p1<-fam2p1[sort(names(fam2p1))]
+#separate even and odd lgs
+evens<-as.list(rep(NA,length(fam2p1)/2))
+odds<-as.list(rep(NA,length(fam2p1)/2))
+for(i in 1:length(fam2p1)){
+  if(i%%2==1){
+    odds[[(i%/%2)+1]]<-fam2p1[[i]]
+  } else {
+    evens[[i/2]]<-fam2p1[[i]]
+  }
+}
+#read in first family phase 2 files
+setwd("C:/Users/Forxb/My Documents/Masters/map comparison/20108/Phase 2/")
+temp = list.files(pattern="*.mstmap")
+fam2p2 = lapply(temp, readx)
+#reorder by numerical lg name
+names(fam2p2)<-c("A","J","K","L","M","N","O","P","B","C","D","E","F","G","H","I")
+fam2p2<-fam2p2[sort(names(fam2p2))]
+#split into odd and even lgs and append to phase 1 odds and evens
+for(i in (length(fam2p1)+1):(length(fam2p1)+length(fam2p2))){
+  if(i%%2==1){
+    odds[[(i%/%2)+1]]<-fam2p2[[i-length(fam2p1)]]
+  } else {
+    evens[[i/2]]<-fam2p2[[i-length(fam2p1)]]
+  }
+}
+fam2evens<-evens
+fam2odds<-odds
+#compare fam1evens as rows, fam2evens as columns
+pairlist<-NULL
+alllist<-NULL
+for(i in 1:length(fam1evens)){
+  for (j in 1:length(fam2evens)){
+    test1<-data.frame(fam1evens[[i]])
+    test2<-data.frame(fam2evens[[j]])
+    pairlist<-c(pairlist,length(intersect(test1[,1],test2[,1])))
+  }
+  alllist<-rbind(alllist,pairlist)
+  pairlist<-NULL
+}
+rownames(alllist)<-c(paste(rep("fam1p1",length(fam1p1)/2),1:(length(fam1p1)/2),sep="_"),paste(rep("fam1p2",length(fam1p2)/2),1:(length(fam1p2)/2),sep="_"))
+colnames(alllist)<-c(paste(rep("fam2p1",length(fam2p1)/2),1:(length(fam2p1)/2),sep="_"),paste(rep("fam2p2",length(fam2p2)/2),1:(length(fam2p2)/2),sep="_"))
+compareevens<-alllist
+compareevens
+heatmap(compareevens,Rowv=NA,Colv=NA,scale="none")
+#find highest matching lgs and compare with second highest matching
+matchevens<-rep(NA,6)
+for(i in 1:nrow(compareevens)){
+  lg<-rownames(compareevens)[i]
+  match<-names(sort(compareevens[i,],decreasing=T))[1]
+  matchno<-max(compareevens[i,])
+  match2<-names(sort(compareevens[i,],decreasing=T))[2]
+  matchno2<-sort(compareevens[i,],decreasing=T)[2]
+  matchdiff<-matchno-sort(compareevens[i,],decreasing=T)[2]
+  matchevens<-rbind(matchevens,c(lg,match,matchno,match2,matchno2,matchdiff))
+}
+colnames(matchevens)<-c("lg","match","matchno","match2","matchno2","matchdiff")
+rownames(matchevens)<-NULL
+matchevens<-data.frame(matchevens[2:nrow(matchevens),])
+matchevens
+
+#compare fam1odds as rows, fam2odds as columns
+pairlist<-NULL
+alllist<-NULL
+for(i in 1:length(fam1odds)){
+  for (j in 1:length(fam2odds)){
+    test1<-data.frame(fam1odds[[i]])
+    test2<-data.frame(fam2odds[[j]])
+    pairlist<-c(pairlist,length(intersect(test1[,1],test2[,1])))
+  }
+  alllist<-rbind(alllist,pairlist)
+  pairlist<-NULL
+}
+rownames(alllist)<-c(paste(rep("fam1p1",length(fam1p1)/2),1:(length(fam1p1)/2),sep="_"),paste(rep("fam1p2",length(fam1p2)/2),1:(length(fam1p2)/2),sep="_"))
+colnames(alllist)<-c(paste(rep("fam2p1",length(fam2p1)/2),1:(length(fam2p1)/2),sep="_"),paste(rep("fam2p2",length(fam2p2)/2),1:(length(fam2p2)/2),sep="_"))
+compareodds<-alllist
+compareodds
+heatmap(compareodds,Rowv=NA,Colv=NA,scale="none")
+#find highest matching lgs and compare with second highest matching
+matchodds<-rep(NA,6)
+for(i in 1:nrow(compareodds)){
+  lg<-rownames(compareodds)[i]
+  match<-names(sort(compareodds[i,],decreasing=T))[1]
+  matchno<-max(compareodds[i,])
+  match2<-names(sort(compareodds[i,],decreasing=T))[2]
+  matchno2<-sort(compareodds[i,],decreasing=T)[2]
+  matchdiff<-matchno-sort(compareodds[i,],decreasing=T)[2]
+  matchodds<-rbind(matchodds,c(lg,match,matchno,match2,matchno2,matchdiff))
+}
+colnames(matchodds)<-c("lg","match","matchno","match2","matchno2","matchdiff")
+rownames(matchodds)<-NULL
+matchodds<-data.frame(matchodds[2:nrow(matchodds),])
+matchodds
